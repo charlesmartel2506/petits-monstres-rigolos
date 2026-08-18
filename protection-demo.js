@@ -33,7 +33,7 @@
   var COURRIEL   = 'charlesmartel2506@gmail.com';
   var TEL        = '514 833-1429';
   var TEL_BRUT   = '+15148331429';
-  var SITE       = 'https://charlesmartel2506.github.io/vaelor-design/';
+  var SITE       = 'https://vaelordesign.com/';
 
   /* ---------------------------------------------------------------------
      1. Ne jamais laisser Google indexer une démo de prospect.
