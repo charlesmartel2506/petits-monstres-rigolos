@@ -125,7 +125,26 @@
       '.vd-barre a{color:#080812;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}' +
       '.vd-barre b{font-weight:700}' +
       '@media(max-width:620px){.vd-barre{font-size:.74rem;padding:9px 12px}}' +
-      'body{padding-bottom:56px!important}';
+      'body{padding-bottom:56px!important}' +
+      /* Le panneau « on en parle ». Il remplace l'ancien lien mailto:, qui ne
+         faisait RIEN sur un ordinateur sans logiciel de courriel configuré
+         (constaté le 19 août 2026 — le seul appel a l'action de la barre etait mort). */
+      '.vd-panneau{position:fixed;inset:0;z-index:2147483001;display:grid;place-items:center;' +
+      'background:rgba(6,6,14,.74);padding:20px;font-family:Inter,Segoe UI,system-ui,sans-serif}' +
+      '.vd-carte{background:#0E0E1A;color:#F4F3FF;max-width:420px;width:100%;border-radius:16px;' +
+      'padding:26px 24px;box-shadow:0 30px 70px -20px rgba(0,0,0,.7);text-align:center;line-height:1.6}' +
+      '.vd-carte h3{margin:0 0 8px;font-size:1.25rem;font-weight:700}' +
+      '.vd-carte p{margin:0 0 18px;color:#B7B4D4;font-size:.92rem;font-weight:400}' +
+      '.vd-b{display:block;margin:0 0 10px;padding:14px 18px;border-radius:100px;text-decoration:none;' +
+      'font-weight:600;font-size:.95rem;background:linear-gradient(120deg,#12D8C5,#4FA6FF,#7C5CFF);color:#080812}' +
+      '.vd-b.s{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#F4F3FF}' +
+      '.vd-adr{display:flex;gap:8px;align-items:center;justify-content:center;margin:16px 0 0;flex-wrap:wrap}' +
+      '.vd-adr code{background:rgba(255,255,255,.07);padding:6px 10px;border-radius:8px;' +
+      'color:#F4F3FF;font-size:.84rem;word-break:break-all}' +
+      '.vd-copier{cursor:pointer;background:none;border:1px solid rgba(255,255,255,.2);color:#12D8C5;' +
+      'border-radius:8px;padding:6px 10px;font:inherit;font-size:.8rem}' +
+      '.vd-fermer{margin-top:18px;background:none;border:0;color:#7F7CA0;font:inherit;' +
+      'font-size:.85rem;cursor:pointer;text-decoration:underline}';
     document.head.appendChild(st);
 
     var bar = document.createElement('div');
@@ -134,9 +153,67 @@
       '<span>Démo privée préparée pour <b>' + echapper(ENTREPRISE) +
       '</b> par <b>Vaelor Design</b></span>' +
       '<a href="tel:' + TEL_BRUT + '">' + TEL + '</a>' +
-      '<a href="mailto:' + COURRIEL + '?subject=' +
-      encodeURIComponent('Ma démo — ' + ENTREPRISE) + '">J\'aime ça, on en parle</a>';
+      '<a href="#" class="vd-parler">J\'aime ça, on en parle</a>';
     document.body.appendChild(bar);
+
+    var lien = bar.querySelector('.vd-parler');
+    if (lien) { lien.addEventListener('click', ouvrirPanneau); }
+  }
+
+  /* Le panneau de contact. Trois chemins, parce qu'aucun ne marche pour tout
+     le monde : le téléphone (toujours), Gmail dans le navigateur (la majorité
+     des commerçants), et le logiciel de courriel local (les téléphones). Plus
+     l'adresse en clair, à copier — le dernier recours qui ne rate jamais. */
+  function ouvrirPanneau(ev) {
+    if (ev) { ev.preventDefault(); }
+    if (document.querySelector('.vd-panneau')) { return; }
+
+    var sujet = encodeURIComponent('Ma démo — ' + ENTREPRISE);
+    var gmail = 'https://mail.google.com/mail/?view=cm&fs=1&to=' +
+                encodeURIComponent(COURRIEL) + '&su=' + sujet;
+
+    var pan = document.createElement('div');
+    pan.className = 'vd-panneau';
+    pan.innerHTML =
+      '<div class="vd-carte" role="dialog" aria-modal="true" aria-label="Nous joindre">' +
+      '<h3>Avec plaisir.</h3>' +
+      '<p>Prenez le chemin le plus simple pour vous — je réponds le jour même.</p>' +
+      '<a class="vd-b" href="tel:' + TEL_BRUT + '">Appeler le ' + TEL + '</a>' +
+      '<a class="vd-b s" href="' + gmail + '" target="_blank" rel="noopener">Écrire depuis Gmail</a>' +
+      '<a class="vd-b s" href="mailto:' + COURRIEL + '?subject=' + sujet + '">' +
+      'Écrire depuis mon application courriel</a>' +
+      '<div class="vd-adr"><code>' + echapper(COURRIEL) + '</code>' +
+      '<button class="vd-copier" type="button">copier</button></div>' +
+      '<button class="vd-fermer" type="button">Fermer</button></div>';
+    document.body.appendChild(pan);
+
+    function fermer() {
+      if (pan.parentNode) { pan.parentNode.removeChild(pan); }
+      document.removeEventListener('keydown', surTouche);
+    }
+    function surTouche(e) { if (e.key === 'Escape') { fermer(); } }
+
+    pan.addEventListener('click', function (e) { if (e.target === pan) { fermer(); } });
+    pan.querySelector('.vd-fermer').addEventListener('click', fermer);
+    document.addEventListener('keydown', surTouche);
+
+    var bouton = pan.querySelector('.vd-copier');
+    bouton.addEventListener('click', function () {
+      function reussi() { bouton.textContent = 'copié ✓'; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(COURRIEL).then(reussi, secours);
+      } else { secours(); }
+      function secours() {
+        var z = document.createElement('textarea');
+        z.value = COURRIEL;
+        z.setAttribute('readonly', '');
+        z.style.cssText = 'position:fixed;top:-1000px';
+        document.body.appendChild(z);
+        z.select();
+        try { document.execCommand('copy'); reussi(); } catch (err) { bouton.textContent = COURRIEL; }
+        document.body.removeChild(z);
+      }
+    });
   }
 
   if (document.readyState === 'loading') {
