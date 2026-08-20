@@ -151,13 +151,24 @@
     bar.className = 'vd-barre';
     bar.innerHTML =
       '<span>Démo privée préparée pour <b>' + echapper(ENTREPRISE) +
-      '</b> par <b>Vaelor Design</b></span>' +
+      '</b> par <a href="' + SITE + '" target="_blank" rel="noopener"><b>Vaelor Design</b></a></span>' +
+      '<a href="' + SITE + '" target="_blank" rel="noopener">vaelordesign.com</a>' +
       '<a href="tel:' + TEL_BRUT + '">' + TEL + '</a>' +
       '<a href="#" class="vd-parler">J\'aime ça, on en parle</a>';
     document.body.appendChild(bar);
 
     var lien = bar.querySelector('.vd-parler');
     if (lien) { lien.addEventListener('click', ouvrirPanneau); }
+
+    /* La barre passe sur 2 ou 3 lignes sur un téléphone. Le `padding-bottom:56px`
+       du CSS ne suffit alors plus et le bas de la page passe dessous : on mesure
+       la vraie hauteur au lieu de la deviner. */
+    function ajusterEspace() {
+      document.body.style.setProperty('padding-bottom', (bar.offsetHeight + 12) + 'px', 'important');
+    }
+    ajusterEspace();
+    window.addEventListener('resize', ajusterEspace);
+    if (window.ResizeObserver) { new ResizeObserver(ajusterEspace).observe(bar); }
   }
 
   /* Le panneau de contact. Trois chemins, parce qu'aucun ne marche pour tout
